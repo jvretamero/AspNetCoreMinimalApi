@@ -6,6 +6,14 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
-    host: true
+    host: true,
+    proxy: {
+      '/pizza': {
+        target: 'http://localhost:5100',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      }
+    }
   }
 })

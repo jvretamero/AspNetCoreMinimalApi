@@ -443,4 +443,4 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
-/Pizzas.db
+Pizzas.db
