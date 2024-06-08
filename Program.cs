@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using PizzaStore.DB;
 
@@ -16,6 +17,8 @@ builder.Services.AddSwaggerGen(c =>
         });
     });
 
+builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("items"));
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -24,10 +27,49 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/pizzas", () => PizzaDB.GetPizzas());
-app.MapGet("/pizzas/{id}", (int id) => PizzaDB.GetPizza(id));
-app.MapPost("/pizzas", (Pizza pizza) => PizzaDB.CreatePizza(pizza));
-app.MapPut("/pizzas", (Pizza pizza) => PizzaDB.UpdatePizza(pizza));
-app.MapDelete("/pizzas/{id}", (int id) => PizzaDB.RemovePizza(id));
+app.MapGet("/pizzas", async (PizzaDb db) =>
+{
+    return await db.Pizzas.ToListAsync();
+});
+
+app.MapGet("/pizzas/{id}", async (PizzaDb db, int id) =>
+{
+    return await db.Pizzas.FindAsync(id);
+});
+
+app.MapPost("/pizzas", async (PizzaDb db, Pizza pizza) =>
+{
+    await db.Pizzas.AddAsync(pizza);
+    await db.SaveChangesAsync();
+    return Results.Created($"/pizza/{pizza.Id}", pizza);
+});
+
+app.MapPut("/pizzas", async (PizzaDb db, Pizza updatePizza) =>
+{
+    var pizza = await db.Pizzas.FindAsync(updatePizza.Id);
+
+    if (pizza == null)
+        return Results.NotFound();
+
+    pizza.Name = updatePizza.Name;
+    pizza.Description = updatePizza.Description;
+
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
+});
+
+app.MapDelete("/pizzas/{id}", async (PizzaDb db, int id) =>
+{
+    var pizza = await db.Pizzas.FindAsync(id);
+
+    if (pizza == null)
+        return Results.NotFound();
+
+    db.Pizzas.Remove(pizza);
+    await db.SaveChangesAsync();
+
+    return Results.NoContent();
+});
 
 app.Run();
