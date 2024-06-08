@@ -17,7 +17,8 @@ builder.Services.AddSwaggerGen(c =>
         });
     });
 
-builder.Services.AddDbContext<PizzaDb>(options => options.UseInMemoryDatabase("items"));
+var connectionString = builder.Configuration.GetConnectionString("Pizzas") ?? "Data Source=Pizzas.db";
+builder.Services.AddSqlite<PizzaDb>(connectionString);
 
 var app = builder.Build();
 
